@@ -13,7 +13,15 @@ object Lrclib {
     private const val USER_AGENT = "Synced/1.0"
     private val tag = Regex("""\[(\d+):(\d+(?:\.\d+)?)]""")
 
-    fun fetch(artist: String, track: String, album: String?, durationSec: Long): List<LyricLine> {
+    /** Never throws: a bad response means no lyrics, not a crash on the caller's background thread. */
+    fun fetch(artist: String, track: String, album: String?, durationSec: Long): List<LyricLine> =
+        try {
+            find(artist, track, album, durationSec)
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+    private fun find(artist: String, track: String, album: String?, durationSec: Long): List<LyricLine> {
         val exact = buildList {
             add("artist_name" to artist)
             add("track_name" to track)
@@ -25,7 +33,12 @@ object Lrclib {
         val search = get("$BASE/search?${query(listOf("q" to "$artist $track"))}") ?: return emptyList()
         val results = JSONArray(search)
         for (i in 0 until results.length()) {
-            results.getJSONObject(i).synced()?.let { return it }
+            val result = results.getJSONObject(i)
+            // Same ±2 s tolerance as /get, so a live cut or remix doesn't win.
+            if (durationSec > 0 && result.has("duration") &&
+                kotlin.math.abs(result.optDouble("duration") - durationSec) > 2
+            ) continue
+            result.synced()?.let { return it }
         }
         return emptyList()
     }

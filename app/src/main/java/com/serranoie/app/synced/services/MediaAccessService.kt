@@ -1,4 +1,4 @@
-package com.serranoie.app.synced
+package com.serranoie.app.synced.services
 
 import android.service.notification.NotificationListenerService
 

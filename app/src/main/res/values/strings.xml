@@ -7,4 +7,8 @@
     <string name="island_access_title">Lyrics need access</string>
     <string name="island_access_action">Tap to allow</string>
     <string name="island_access_cell">Lyrics</string>
+    <string name="option_beat_pulse">Beat pulse</string>
+    <string name="option_lyric_animation">Lyric line animation</string>
+    <string name="option_three_lines">Show previous line</string>
+    <string name="option_accent_glow">Accent glow on current line</string>
 </resources>
