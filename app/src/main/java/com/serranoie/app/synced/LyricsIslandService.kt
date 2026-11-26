@@ -58,6 +58,7 @@ class LyricsIslandService : ComposeIslandProviderService() {
     private val main = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor()
     private val lines = mutableStateOf<List<LyricLine>>(emptyList())
+    private var beat: Beat? = null
     private val playback = mutableStateOf<PlaybackState?>(null)
 
     private val sessions by lazy { getSystemService(MediaSessionManager::class.java) }
@@ -140,6 +141,7 @@ class LyricsIslandService : ComposeIslandProviderService() {
         controller = null
         trackKey = null
         title = null
+        beat = null
         lines.value = emptyList()
     }
 
@@ -161,12 +163,15 @@ class LyricsIslandService : ComposeIslandProviderService() {
         val durationSec = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION) / 1000
         io.execute {
             val result = Lrclib.fetch(artist, track, album, durationSec)
-            main.post { if (trackKey == key) show(result) }
+            // Off the main thread: a few hundred grid fits over every line
+            val grid = BeatEstimator.estimate(result)
+            main.post { if (trackKey == key) show(result, grid) }
         }
     }
 
-    private fun show(result: List<LyricLine>) {
+    private fun show(result: List<LyricLine>, grid: Beat? = null) {
         lines.value = result
+        beat = grid
         publish()
     }
 
@@ -175,7 +180,17 @@ class LyricsIslandService : ComposeIslandProviderService() {
         if (hostInfo?.supportsAttachments != true) return
         val attachments =
             if (lines.value.isEmpty()) emptyList()
-            else listOf(IslandAttachmentPayload(key = ATTACHMENT, anchor = IslandAnchor.MEDIA, heightDp = 72, matchTitle = title))
+            else listOf(
+                IslandAttachmentPayload(
+                    key = ATTACHMENT,
+                    anchor = IslandAnchor.MEDIA,
+                    heightDp = 72,
+                    matchTitle = title,
+                    // Lets the host pulse its lights on the beat; null when the lyrics don't reveal one
+                    beatMs = beat?.periodMs,
+                    beatOffsetMs = beat?.offsetMs,
+                ),
+            )
         try {
             host.publish(IslandPayload(attachments = attachments))
         } catch (_: Exception) {

@@ -23,12 +23,18 @@ data class IslandOptionPayload(
  * @param heightDp First guess for the height; report the real one with IslandHostHandle.resize.
  * @param matchTitle When set, the host shows the attachment only while the anchor's content matches it
  *  (for [IslandAnchor.MEDIA], the playing track's title), so stale content never sits under another track.
+ * @param beatMs Beat period of the anchor's content in ms (60000 / BPM), when the provider knows it. The host
+ *  pulses the attachment's backdrop on it; older hosts ignore it.
+ * @param beatOffsetMs Playback position in ms of any one beat, so the pulse lands on the beat rather than just
+ *  at the right speed.
  */
 data class IslandAttachmentPayload(
     val key: String = "",
     val anchor: String = IslandAnchor.MEDIA,
     val heightDp: Int = 72,
     val matchTitle: String? = null,
+    val beatMs: Float? = null,
+    val beatOffsetMs: Float? = null,
 )
 
 data class BriefCardPayload(
