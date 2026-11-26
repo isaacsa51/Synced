@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_lyrics"
+        android:label="@string/app_name">
+
+        <service
+            android:name=".MediaAccessService"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".LyricsIslandService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.sameerasw.island.PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="com.sameerasw.island.provider.label"
+                android:value="@string/island_label" />
+            <meta-data
+                android:name="com.sameerasw.island.provider.description"
+                android:value="@string/island_description" />
+        </service>
+    </application>
+</manifest>

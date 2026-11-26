@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Synced</string>
+    <string name="island_label">Synced</string>
+    <string name="island_description">Synced lyrics for what is playing, from lrclib.net</string>
+</resources>
