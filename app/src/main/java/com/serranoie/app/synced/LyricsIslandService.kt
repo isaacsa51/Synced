@@ -44,6 +44,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sameerasw.island.sdk.HostInfo
+import com.sameerasw.island.sdk.IslandAction
+import com.sameerasw.island.sdk.IslandActionType
+import com.sameerasw.island.sdk.IslandCellPayload
+import com.sameerasw.island.sdk.IslandInteractionsPayload
+import com.sameerasw.island.sdk.IslandItemPayload
+import com.sameerasw.island.sdk.IslandLinePayload
+import com.sameerasw.island.sdk.IslandTone
 import com.sameerasw.island.sdk.IslandAnchor
 import com.sameerasw.island.sdk.IslandAttachmentPayload
 import com.sameerasw.island.sdk.IslandHostHandle
@@ -67,6 +74,7 @@ class LyricsIslandService : ComposeIslandProviderService() {
     private var controller: MediaController? = null
     private var trackKey: String? = null
     private var title: String? = null
+    private var needsAccess = false
 
     private val sessionsChanged = MediaSessionManager.OnActiveSessionsChangedListener { bind(it) }
 
@@ -75,6 +83,7 @@ class LyricsIslandService : ComposeIslandProviderService() {
         override fun onPlaybackStateChanged(state: PlaybackState?) {
             playback.value = state
         }
+
         override fun onSessionDestroyed() = refresh()
     }
 
@@ -103,12 +112,19 @@ class LyricsIslandService : ComposeIslandProviderService() {
 
     private fun start() {
         stop()
-        try {
-            sessions.addOnActiveSessionsChangedListener(sessionsChanged, listener, main)
-        } catch (_: SecurityException) {
+        if (!SetupActivity.hasMediaAccess(this)) {
+            needsAccess = true
             show(emptyList())
             return
         }
+        try {
+            sessions.addOnActiveSessionsChangedListener(sessionsChanged, listener, main)
+        } catch (_: SecurityException) {
+            needsAccess = true
+            show(emptyList())
+            return
+        }
+        needsAccess = false
         refresh()
     }
 
@@ -122,7 +138,8 @@ class LyricsIslandService : ComposeIslandProviderService() {
     }
 
     private fun bind(active: List<MediaController>?) {
-        val next = active?.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: active?.firstOrNull()
+        val next = active?.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            ?: active?.firstOrNull()
         if (next != null && next.sessionToken == controller?.sessionToken) return
         controller?.unregisterCallback(callback)
         controller = next
@@ -163,7 +180,6 @@ class LyricsIslandService : ComposeIslandProviderService() {
         val durationSec = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION) / 1000
         io.execute {
             val result = Lrclib.fetch(artist, track, album, durationSec)
-            // Off the main thread: a few hundred grid fits over every line
             val grid = BeatEstimator.estimate(result)
             main.post { if (trackKey == key) show(result, grid) }
         }
@@ -177,24 +193,48 @@ class LyricsIslandService : ComposeIslandProviderService() {
 
     private fun publish() {
         val host = host ?: return
-        if (hostInfo?.supportsAttachments != true) return
+        val items = if (needsAccess) listOf(accessPrompt()) else emptyList()
         val attachments =
-            if (lines.value.isEmpty()) emptyList()
+            if (needsAccess || hostInfo?.supportsAttachments != true || lines.value.isEmpty()) emptyList()
             else listOf(
                 IslandAttachmentPayload(
                     key = ATTACHMENT,
                     anchor = IslandAnchor.MEDIA,
                     heightDp = 72,
                     matchTitle = title,
-                    // Lets the host pulse its lights on the beat; null when the lyrics don't reveal one
                     beatMs = beat?.periodMs,
                     beatOffsetMs = beat?.offsetMs,
                 ),
             )
         try {
-            host.publish(IslandPayload(attachments = attachments))
+            host.publish(IslandPayload(items = items, attachments = attachments))
         } catch (_: Exception) {
         }
+    }
+
+    private fun accessPrompt(): IslandItemPayload {
+        val open = IslandAction(IslandActionType.OPEN_APP)
+        return IslandItemPayload(
+            key = ACCESS_ITEM,
+            compact = listOf(
+                IslandCellPayload(
+                    key = ACCESS_ITEM,
+                    text = getString(R.string.island_access_cell),
+                    tone = IslandTone.ALERT
+                )
+            ),
+            line = IslandLinePayload(
+                start = getString(R.string.island_access_title),
+                end = getString(R.string.island_access_action),
+                tone = IslandTone.ALERT,
+            ),
+            dismissible = true,
+            interactions = IslandInteractionsPayload(
+                onTap = open,
+                onExpandedTap = open,
+                onOpen = open
+            ),
+        )
     }
 
     @Composable
@@ -214,7 +254,8 @@ class LyricsIslandService : ComposeIslandProviderService() {
         val index = timed.indexOfLast { it.timeMs <= now }
 
         var heightPx by remember { mutableIntStateOf(0) }
-        val corner = with(density) { if (heightPx > 0) minOf(28.dp, (heightPx / 2f).toDp()) else 28.dp }
+        val corner =
+            with(density) { if (heightPx > 0) minOf(28.dp, (heightPx / 2f).toDp()) else 28.dp }
 
         Box(
             Modifier
@@ -233,7 +274,7 @@ class LyricsIslandService : ComposeIslandProviderService() {
                 transitionSpec = {
                     val forward = targetState >= initialState
                     (slideInVertically { if (forward) it / 2 else -it / 2 } + fadeIn()) togetherWith
-                        (slideOutVertically { if (forward) -it / 2 else it / 2 } + fadeOut())
+                            (slideOutVertically { if (forward) -it / 2 else it / 2 } + fadeOut())
                 },
                 label = "islandLyric",
             ) { shown ->
@@ -253,7 +294,9 @@ class LyricsIslandService : ComposeIslandProviderService() {
                             style = NextLine,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 2.dp),
                         )
                     }
                 }
@@ -269,9 +312,11 @@ class LyricsIslandService : ComposeIslandProviderService() {
 
     private companion object {
         const val ATTACHMENT = "lyrics"
+        const val ACCESS_ITEM = "access"
         val SURFACE = IslandSurfaceKey.attachment(ATTACHMENT)
 
-        private val LyricShadow = Shadow(Color.Black.copy(alpha = 0.6f), Offset(0f, 1f), blurRadius = 8f)
+        private val LyricShadow =
+            Shadow(Color.Black.copy(alpha = 0.6f), Offset(0f, 1f), blurRadius = 8f)
         val CurrentLine = TextStyle(
             color = Color.White,
             fontSize = 17.sp,

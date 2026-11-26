@@ -5,7 +5,6 @@ data class IslandPayload(
     val items: List<IslandItemPayload> = emptyList(),
     val briefCards: List<BriefCardPayload> = emptyList(),
     val options: List<IslandOptionPayload> = emptyList(),
-    // Extra shapes drawn below a host item's expanded view. Send only when HostInfo.supportsAttachments is true.
     val attachments: List<IslandAttachmentPayload> = emptyList(),
 )
 
@@ -15,19 +14,6 @@ data class IslandOptionPayload(
     val checked: Boolean = false,
 )
 
-/**
- * A provider-drawn shape shown below a host item while that item is expanded, for example lyrics under the
- * media player. Its surface key is [IslandSurfaceKey.attachment] of [key]; draw it in ExpandedContent.
- *
- * @param anchor Host item to hang under, one of [IslandAnchor].
- * @param heightDp First guess for the height; report the real one with IslandHostHandle.resize.
- * @param matchTitle When set, the host shows the attachment only while the anchor's content matches it
- *  (for [IslandAnchor.MEDIA], the playing track's title), so stale content never sits under another track.
- * @param beatMs Beat period of the anchor's content in ms (60000 / BPM), when the provider knows it. The host
- *  pulses the attachment's backdrop on it; older hosts ignore it.
- * @param beatOffsetMs Playback position in ms of any one beat, so the pulse lands on the beat rather than just
- *  at the right speed.
- */
 data class IslandAttachmentPayload(
     val key: String = "",
     val anchor: String = IslandAnchor.MEDIA,

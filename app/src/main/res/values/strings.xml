@@ -2,4 +2,9 @@
     <string name="app_name">Synced</string>
     <string name="island_label">Synced</string>
     <string name="island_description">Synced lyrics for what is playing, from lrclib.net</string>
+    <string name="setup_prompt">Turn on Synced to show lyrics on the island</string>
+    <string name="setup_ready">Synced is ready. Lyrics show under the island\'s media player</string>
+    <string name="island_access_title">Lyrics need access</string>
+    <string name="island_access_action">Tap to allow</string>
+    <string name="island_access_cell">Lyrics</string>
 </resources>

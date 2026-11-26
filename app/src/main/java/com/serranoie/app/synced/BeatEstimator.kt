@@ -10,25 +10,26 @@ import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** A beat lands at every [offsetMs] + n × [periodMs] of playback position. */
 data class Beat(val periodMs: Float, val offsetMs: Float)
 
 /**
- * Estimates a track's beat grid from its synced lyrics alone: no audio, no extra lookups. Sung lines mostly start
- * on a beat, so the period whose grid the line timestamps line up with best is the tempo, and where they line up
- * is the phase. Returns null when the lines don't agree on any grid (free-time songs, sloppy timings, too few lines),
- * and the host then keeps its own free-running animation.
+ * Estimates a track's beat grid from its synced lyrics alone: no audio, no extra lookups.
+ *
+ * Lyric phrases tend to start at the same point of a bar, so this fits a bar grid (four beats) to the line
+ * timestamps and divides by four. Fitting single beats doesn't work on real lyrics: hand-made LRC timings are off by
+ * 100–200 ms and lines come in on pickups and off-beats, which is noise the size of a beat but small next to a bar.
+ * Returns null when the lines don't agree on any grid better than chance; the host then keeps its free-running lights.
  */
 object BeatEstimator {
-    // 60–180 BPM: covers nearly all pop; faster songs land on their half-time, which still pulses on the beat
-    private const val MIN_PERIOD_MS = 333.0
-    private const val MAX_PERIOD_MS = 1000.0
+    private const val BEATS_PER_BAR = 4
+    private const val MIN_BAR_MS = 1333.0
+    private const val MAX_BAR_MS = 4000.0
     private const val COARSE_STEP_MS = 1.0
     private const val FINE_STEP_MS = 0.02
-    private const val MIN_LINES = 12
-    // Tie-breaker between a tempo and its half/double: a mild preference for ~120 BPM, the usual pop pulse
-    private const val PREFERRED_PERIOD_MS = 500.0
+    private const val MIN_LINES = 16
+    private const val PREFERRED_BAR_MS = 2000.0
     private const val PREFERENCE_OCTAVES = 1.0
+    private const val CHANCE_FACTOR = 3.0
     private const val MIN_ALIGNMENT = 0.3
 
     fun estimate(lines: List<LyricLine>): Beat? {
@@ -36,8 +37,6 @@ object BeatEstimator {
         if (onsets.size < MIN_LINES) return null
         val n = onsets.size
 
-        // How tightly the onsets cluster at one phase of a grid with this period: 1 = every line on the grid,
-        // ~1/sqrt(n) = no relation (the length of the mean unit vector of each onset's phase)
         fun align(period: Double): Pair<Double, Double> {
             var c = 0.0
             var s = 0.0
@@ -50,14 +49,14 @@ object BeatEstimator {
         }
 
         fun preference(period: Double): Double {
-            val octaves = ln(period / PREFERRED_PERIOD_MS) / ln(2.0) / PREFERENCE_OCTAVES
+            val octaves = ln(period / PREFERRED_BAR_MS) / ln(2.0) / PREFERENCE_OCTAVES
             return exp(-0.5 * octaves * octaves)
         }
 
-        var best = MIN_PERIOD_MS
+        var best = MIN_BAR_MS
         var bestScore = -1.0
-        var p = MIN_PERIOD_MS
-        while (p <= MAX_PERIOD_MS) {
+        var p = MIN_BAR_MS
+        while (p <= MAX_BAR_MS) {
             val score = align(p).first * preference(p)
             if (score > bestScore) {
                 bestScore = score
@@ -65,23 +64,26 @@ object BeatEstimator {
             }
             p += COARSE_STEP_MS
         }
-        // Small period errors add up over a whole song, so refine finely around the coarse pick
-        var fine = best
-        var fineAlign = align(best)
+        var bar = best
+        var barAlign = align(best)
         p = best - COARSE_STEP_MS
         while (p <= best + COARSE_STEP_MS) {
             val a = align(p)
-            if (a.first > fineAlign.first) {
-                fineAlign = a
-                fine = p
+            if (a.first > barAlign.first) {
+                barAlign = a
+                bar = p
             }
             p += FINE_STEP_MS
         }
 
-        val (alignment, phase) = fineAlign
-        // Random timestamps still line up a little by chance (~1/sqrt(n)); demand well above that
-        if (alignment < max(MIN_ALIGNMENT, 3.0 / sqrt(n.toDouble()))) return null
-        val offset = ((phase / (2 * PI) * fine) % fine + fine) % fine
-        return Beat(fine.toFloat(), offset.toFloat())
+        val (alignment, barPhase) = barAlign
+        if (alignment < max(MIN_ALIGNMENT, CHANCE_FACTOR / sqrt(n.toDouble()))) return null
+        val beat = bar / BEATS_PER_BAR
+        val barStart = wrap(barPhase / (2 * PI) * bar, bar)
+        val beatPhase = wrap(align(beat).second / (2 * PI) * beat, beat)
+        val snapped = beatPhase + Math.round((barStart - beatPhase) / beat) * beat
+        return Beat(beat.toFloat(), wrap(snapped, bar).toFloat())
     }
+
+    private fun wrap(value: Double, period: Double) = (value % period + period) % period
 }
