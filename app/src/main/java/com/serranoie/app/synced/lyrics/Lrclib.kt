@@ -1,4 +1,4 @@
-package com.serranoie.app.synced
+package com.serranoie.app.synced.lyrics
 
 import org.json.JSONArray
 import org.json.JSONObject

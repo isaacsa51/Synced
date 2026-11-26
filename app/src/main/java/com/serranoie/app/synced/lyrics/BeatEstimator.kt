@@ -1,4 +1,4 @@
-package com.serranoie.app.synced
+package com.serranoie.app.synced.lyrics
 
 import kotlin.math.PI
 import kotlin.math.atan2
