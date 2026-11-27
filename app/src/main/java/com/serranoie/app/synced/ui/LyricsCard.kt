@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -43,7 +44,8 @@ import kotlinx.coroutines.delay
 
 /**
  * The synced lyrics card: the current line, the next one, and optionally the previous one.
- * [glowColor] null turns the glow sweep off. [modifier] is applied before clipping, for snapshots.
+ * [glowColor] null turns the glow off. With [animate] the glow sweeps across the line over its duration;
+ * without it the whole line glows at once. [modifier] is applied before clipping, for snapshots.
  */
 @Composable
 fun LyricsCard(
@@ -51,21 +53,23 @@ fun LyricsCard(
     playback: PlaybackState?,
     powerSave: Boolean,
     animate: Boolean,
+    fadeMs: Int = 300,
     showPast: Boolean,
     glowColor: Color?,
     onHeightChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val glow = glowColor?.let(::glowStyle)
+    val sweeping = glow != null && animate
 
     var now by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(playback, powerSave, glow != null) {
+    LaunchedEffect(playback, powerSave, sweeping) {
         while (true) {
             now = playback.positionNow()
             delay(
                 when {
                     powerSave -> 500
-                    glow != null -> 50
+                    sweeping -> 50
                     else -> 150
                 }
             )
@@ -79,8 +83,8 @@ fun LyricsCard(
             transitionSpec = {
                 if (!animate) return@AnimatedContent EnterTransition.None togetherWith ExitTransition.None
                 val forward = targetState >= initialState
-                (slideInVertically { if (forward) it / 2 else -it / 2 } + fadeIn()) togetherWith
-                        (slideOutVertically { if (forward) -it / 2 else it / 2 } + fadeOut())
+                (slideInVertically(tween(fadeMs)) { if (forward) it / 2 else -it / 2 } + fadeIn(tween(fadeMs))) togetherWith
+                        (slideOutVertically(tween(fadeMs)) { if (forward) -it / 2 else it / 2 } + fadeOut(tween(fadeMs)))
             },
             label = "islandLyric",
         ) { shown ->
@@ -91,7 +95,7 @@ fun LyricsCard(
                 )
 
                 val text = italicizeAsides(lines.getOrNull(shown)?.text?.ifBlank { null } ?: "♪")
-                val progress = lines.progressAt(shown, now)
+                val progress = lines.progressAt(shown, now)?.let { if (sweeping) it else 1f }
                 Line(
                     text = if (glow == null || progress == null) text else sweep(
                         text,

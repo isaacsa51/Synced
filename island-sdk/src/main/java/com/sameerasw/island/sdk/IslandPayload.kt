@@ -12,6 +12,7 @@ data class IslandOptionPayload(
     val key: String = "",
     val title: String = "",
     val checked: Boolean = false,
+    val subtitle: String? = null,
 )
 
 data class IslandAttachmentPayload(

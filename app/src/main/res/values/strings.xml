@@ -12,4 +12,6 @@
     <string name="option_lyric_animation">Lyric line animation</string>
     <string name="option_three_lines">Show previous line</string>
     <string name="option_accent_glow">Accent glow on current line</string>
+    <string name="option_beat_pulse_subtitle">The beat is estimated from the lyric timings, so it can drift out of sync on some songs</string>
+    <string name="option_accent_glow_subtitle">With line animation on, the glow sweeps across each line over its duration. It follows whole lines, not individual words</string>
 </resources>

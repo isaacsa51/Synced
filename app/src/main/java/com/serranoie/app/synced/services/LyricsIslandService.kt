@@ -153,7 +153,6 @@ class LyricsIslandService : ComposeIslandProviderService() {
         val host = host ?: return
         val attachments = when {
             hostInfo?.supportsAttachments != true -> emptyList()
-            // Without access the title is unknown, so the card goes under whatever is playing.
             needsAccess.value -> listOf(lyricsAttachment(title = null, beat = null))
             lines.value.isEmpty() -> emptyList()
             else -> listOf(lyricsAttachment(title, beat.takeIf { options[IslandOption.BEAT_PULSE] }))
