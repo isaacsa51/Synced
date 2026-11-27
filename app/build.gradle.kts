@@ -16,8 +16,19 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            System.getenv("KEYSTORE_PATH")?.let { storeFile = file(it) }
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            // ponytail: falls back to debug key when no keystore secret; CI debug key changes per run, so updates won't install over each other
+            signingConfig = signingConfigs.getByName(if (System.getenv("KEYSTORE_PATH") != null) "release" else "debug")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
