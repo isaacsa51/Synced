@@ -21,7 +21,7 @@ When you play a song in any music app, Synced:
    follows the song line by line.
 
 <p align="center">
-  <img src="docs/images/demo.webp" width="420" alt="Synced lyrics card under the Essentials island media player"/>
+  <img src="docs/images/lyrics.gif" width="420" alt="Synced lyrics card under the Essentials island media player"/>
 </p>
 
 
