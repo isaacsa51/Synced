@@ -1,0 +1,29 @@
+<!-- Themed-icon version of ic_launcher_foreground: same shapes and placement, one flat colour
+     (the launcher tints it), no shadows. The next line keeps its lower alpha so the two lines still differ. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <group android:scaleX="1.0936846"
+      android:scaleY="1.0936846"
+      android:translateX="-17.967983"
+      android:translateY="-28.357986">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M104,186L264,186A18,18 0,0 1,282 204L282,204A18,18 0,0 1,264 222L104,222A18,18 0,0 1,86 204L86,204A18,18 0,0 1,104 186z"/>
+    <path
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.6"
+        android:pathData="M104,238L216,238A18,18 0,0 1,234 256L234,256A18,18 0,0 1,216 274L104,274A18,18 0,0 1,86 256L86,256A18,18 0,0 1,104 238z"/>
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M348,112L348,112A26,26 0,0 1,374 138L374,316A26,26 0,0 1,348 342L348,342A26,26 0,0 1,322 316L322,138A26,26 0,0 1,348 112z"/>
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M364.86,118.08L407.75,154.08A20,20 118.78,0 1,410.22 182.25L410.22,182.25A20,20 124.56,0 1,382.04 184.72L339.14,148.72A20,20 98.09,0 1,336.68 120.54L336.68,120.54A20,20 62.02,0 1,364.86 118.08z"/>
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M304,322m-70,0a70,70 0,1 1,140 0a70,70 0,1 1,-140 0"/>
+  </group>
+</vector>

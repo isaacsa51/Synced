@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Synced foreground</title>
+  <defs>
+
+    <!-- Note: amber at the top into deep orange at the head. -->
+    <linearGradient id="note" x1="0" y1="110" x2="0" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB443"/>
+      <stop offset="1" stop-color="#FF6A1F"/>
+    </linearGradient>
+    <!-- Lyric lines: lighter oranges. -->
+    <linearGradient id="line1" x1="104" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC27A"/>
+      <stop offset="1" stop-color="#FF8A3D"/>
+    </linearGradient>
+    <linearGradient id="line2" x1="104" y1="0" x2="252" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD9AE"/>
+      <stop offset="1" stop-color="#FFAE6E"/>
+    </linearGradient>
+
+    <filter id="blur18" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="blur10" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+
+  <!-- Shifted so the mark sits optically centred: a little left of its box, since the note head carries the weight. -->
+  <g transform="translate(-18 2)">
+  <!-- Lyric lines on the left: the current one solid, the next one lighter. -->
+  <rect x="104" y="184" width="196" height="36" rx="18" fill="url(#line1)"/>
+  <rect x="104" y="236" width="148" height="36" rx="18" fill="url(#line2)" opacity="0.75"/>
+
+  <!-- Soft warm shadow under the note. -->
+  <g fill="#FF7A2E" opacity="0.3" filter="url(#blur18)" transform="translate(0 16)">
+    <circle cx="322" cy="320" r="70"/>
+    <rect x="340" y="110" width="52" height="230" rx="26"/>
+    <rect x="350" y="111.4" width="96" height="40" rx="20" transform="rotate(40 370 131.4)"/>
+  </g>
+
+  <!-- The note: round head, a tall stem on its right, and a short straight tail angled down from the top. -->
+  <g fill="url(#note)">
+    <rect x="340" y="110" width="52" height="230" rx="26"/>
+    <rect x="350" y="111.4" width="96" height="40" rx="20" transform="rotate(40 370 131.4)"/>
+    <circle cx="322" cy="320" r="70"/>
+  </g>
+  </g>
+</svg>
